@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Башня на Шпалерной</title>
+<style>
+  :root {
+    --bg: #f6f2ec; --card: #fff; --text: #1f1a17; --muted: #6b625b;
+    --accent: #a63a24; --ok: #2f7a3e; --bad: #b3261e; --line: #e2dbd2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #171412; --card: #221e1b; --text: #f1ece6; --muted: #a89f97;
+      --accent: #e0805f; --ok: #6cc17f; --bad: #f08a80; --line: #3a332e; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 17px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 560px; margin: 0 auto; padding: 24px 16px 48px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+  .muted { color: var(--muted); font-size: 15px; }
+  h1 { font-size: 24px; line-height: 1.25; margin: 0 0 8px; }
+  h2 { font-size: 20px; line-height: 1.3; margin: 8px 0 16px; }
+  button { font: inherit; width: 100%; text-align: left; padding: 14px 16px; margin: 0 0 10px;
+    border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--text); cursor: pointer; }
+  button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  button:disabled { cursor: default; }
+  button.right { border-color: var(--ok); box-shadow: inset 4px 0 var(--ok); }
+  button.wrong { border-color: var(--bad); box-shadow: inset 4px 0 var(--bad); }
+  .primary { background: var(--accent); border-color: var(--accent); color: #fff; text-align: center; font-weight: 600; margin-top: 8px; }
+  .verdict { font-weight: 700; margin: 8px 0 4px; }
+  .verdict.ok { color: var(--ok); } .verdict.no { color: var(--bad); }
+  a { color: var(--accent); }
+  .score { font-size: 48px; font-weight: 700; margin: 8px 0; }
+</style>
+</head>
+<body>
+<main>
+  <div class="card" id="app" aria-live="polite"></div>
+</main>
+<script>
+// ponytail: факты только из context/architecture/03-данные/пул-фактов.md, тексты здесь же, без отдельного файла
+const ENC = "https://encspb.ru/object/2855745571";
+const QUESTIONS = [
+  {
+    q: "В какие годы построили водонапорную башню на Шпалерной?",
+    options: ["1830–1832", "1859–1861", "1881–1883", "1903–1905"],
+    answer: 1,
+    note: "Башню построили в 1859–1861 годах. Всю Главную водопроводную станцию строили дольше: с 1858 по 1863 год.",
+    source: { title: "Энциклопедия СПб, статья «Водонапорные башни» (раздел «Статьи» на странице)", url: ENC },
+  },
+  {
+    q: "Для чего строили эту башню?",
+    options: ["Как пожарную каланчу", "Как маяк для судов на Неве",
+      "Для работы первого в Петербурге централизованного водопровода"],
+    answer: 2,
+    note: "Башня входила в Главную водопроводную станцию и строилась, чтобы работал первый в Петербурге централизованный водопровод.",
+    source: { title: "Энциклопедия СПб, статья о Э. Г. Шуберском", url: ENC },
+  },
+  {
+    q: "Какая форма у башни?",
+    options: ["Круглая", "Квадратная", "Шестигранная", "Восьмигранная"],
+    answer: 3,
+    note: "Энциклопедия описывает её так: «восьмигранная башня из красного кирпича».",
+    source: { title: "Энциклопедия СПб, статья «Водонапорные башни» (раздел «Статьи» на странице)", url: ENC },
+  },
+  {
+    q: "Какова высота башни?",
+    options: ["22 метра", "52,5 метра", "80 метров"],
+    answer: 1,
+    note: "Высота башни — 52,5 метра.",
+    source: { title: "Энциклопедия СПб, статья «Водонапорные башни» (раздел «Статьи» на странице)", url: ENC },
+  },
+  {
+    q: "Кто составил проект башни?",
+    options: [
+      "Архитектор Эрнест Шуберский, один, без помощников",
+      "Иван Мерц, помощник архитектора Эрнеста Шуберского",
+      "Иван Мерц, а Шуберский к башне отношения не имел",
+    ],
+    answer: 1,
+    note: "По должности архитектором был Шуберский, а проект составлял его помощник Мерц. Журнал «Зодчий» в 1878 году писал, что башня «по праву, должна быть признана произведением Ивана Александровича» — но это мнение коллег Мерца, а не документ.",
+    source: { title: "«Зодчий», 1878, с. 84 (скан РНБ)", url: "https://vivaldi.nlr.ru/pm000050193/view/#page=95" },
+  },
+  {
+    q: "Элементы каких сооружений использованы в оформлении башни?",
+    options: ["Античных храмов", "Средневековых оборонительных сооружений", "Русского деревянного зодчества"],
+    answer: 1,
+    note: "В оформлении башни использованы элементы средневековых фортификационных сооружений.",
+    source: { title: "Энциклопедия СПб, статья о Э. Г. Шуберском", url: ENC },
+  },
+  {
+    q: "Когда башня перестала работать как водонапорная?",
+    options: ["Сразу после постройки", "В начале XX века", "Только при реконструкции 2001–2002 годов"],
+    answer: 1,
+    note: "В начале XX века башня утратила своё прямое назначение. После реконструкции 2001–2002 годов в ней разместился музей «Мир воды Санкт-Петербурга».",
+    source: { title: "Энциклопедия СПб, статьи «Главная водопроводная станция» и «Водонапорные башни» (раздел «Статьи» на странице)", url: ENC },
+  },
+];
+
+// проверка данных: битый вопрос заметен в консоли сразу
+QUESTIONS.forEach((x, i) => console.assert(
+  x.options.length >= 3 && x.options.length <= 4 && x.options[x.answer] && x.source.url,
+  "Вопрос " + (i + 1) + " собран неверно"));
+
+const app = document.getElementById("app");
+let i = 0, score = 0;
+
+function el(tag, attrs = {}, text = "") {
+  const n = Object.assign(document.createElement(tag), attrs);
+  if (text) n.textContent = text;
+  return n;
+}
+
+function start() {
+  i = 0; score = 0;
+  app.replaceChildren(
+    el("h1", {}, "Водонапорная башня на Шпалерной, 56"),
+    el("p", {}, `${QUESTIONS.length} вопросов об этой башне, примерно на 2–3 минуты. После каждого ответа покажем, откуда известен факт.`),
+    Object.assign(el("button", { className: "primary" }, "Начать"), { onclick: show }),
+  );
+}
+
+function show() {
+  const x = QUESTIONS[i];
+  const buttons = x.options.map((text, k) =>
+    Object.assign(el("button", {}, text), { onclick: () => pick(k, buttons) }));
+  app.replaceChildren(
+    el("p", { className: "muted" }, `Вопрос ${i + 1} из ${QUESTIONS.length}`),
+    el("h2", {}, x.q),
+    ...buttons,
+  );
+  buttons[0].focus();
+}
+
+function pick(k, buttons) {
+  const x = QUESTIONS[i], right = k === x.answer;
+  if (right) score++;
+  buttons.forEach((b, n) => {
+    b.disabled = true;
+    if (n === x.answer) b.classList.add("right");
+    else if (n === k) b.classList.add("wrong");
+  });
+  const link = el("a", { href: x.source.url, target: "_blank", rel: "noopener" }, x.source.title);
+  const src = el("p", { className: "muted" }, "Источник: ");
+  src.append(link);
+  const last = i === QUESTIONS.length - 1;
+  const next = Object.assign(el("button", { className: "primary" }, last ? "Узнать результат" : "Дальше"),
+    { onclick: () => { i++; last ? finish() : show(); } });
+  app.append(
+    el("p", { className: "verdict " + (right ? "ok" : "no") },
+      right ? "Верно" : "Неверно. Правильный ответ: " + x.options[x.answer]),
+    el("p", {}, x.note),
+    src,
+    next,
+  );
+  next.focus();
+}
+
+function finish() {
+  const again = Object.assign(el("button", { className: "primary" }, "Пройти ещё раз"), { onclick: start });
+  app.replaceChildren(
+    el("h1", {}, "Результат"),
+    el("p", { className: "score" }, `${score} из ${QUESTIONS.length}`),
+    el("p", { className: "muted" }, "Факты взяты из Энциклопедии Санкт-Петербурга и журнала «Зодчий» 1878 года."),
+    again,
+  );
+  again.focus();
+}
+
+start();
+</script>
+</body>
+</html>
