@@ -4,40 +4,57 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Башня на Шпалерной</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Unbounded:wght@600&display=swap" rel="stylesheet">
 <style>
+  /* стиль презентаций интенсива (presentations/lessonNN/src/style.css, тёмная тема): живой фон field.js + полупрозрачные карточки */
   :root {
-    --bg: #f6f2ec; --card: #fff; --text: #1f1a17; --muted: #6b625b;
-    --accent: #a63a24; --ok: #2f7a3e; --bad: #b3261e; --line: #e2dbd2;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root { --bg: #171412; --card: #221e1b; --text: #f1ece6; --muted: #a89f97;
-      --accent: #e0805f; --ok: #6cc17f; --bad: #f08a80; --line: #3a332e; }
+    --ink: #fff; --muted: #b3b0b0; --surface: rgba(255, 255, 255, .08);
+    --blue: #4d61f4; --blue-ink: #a9b4ff; --blue-soft: rgba(124, 140, 255, .26);
+    --bad: #e5484d; --bad-ink: #ff9b9b; --bad-soft: rgba(255, 107, 107, .22);
+    --card: rgba(46, 40, 40, .86); --card-line: rgba(255, 255, 255, .10); --card-shadow: 0 18px 50px rgba(0, 0, 0, .45);
+    --head: 'Unbounded', 'Arial Black', sans-serif; --text: 'Inter Tight', Arial, sans-serif;
+    --t: .38s cubic-bezier(.2, .7, .2, 1);
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text);
-    font: 17px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  main { max-width: 560px; margin: 0 auto; padding: 24px 16px 48px; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+  html, body { margin: 0; min-height: 100%; background: #161010; }
+  body { color: var(--ink); font: 400 17px/1.5 var(--text); }
+  .field { position: fixed; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+  main { position: relative; z-index: 1; max-width: 560px; margin: 0 auto; padding: 48px 16px; }
+  .title { font-family: var(--head); font-weight: 600; text-transform: uppercase; line-height: 1.06; margin: 0 0 24px;
+    font-size: clamp(26px, 7.5vw, 44px); hyphens: auto; overflow-wrap: break-word; }
+  /* ponytail: без backdrop-filter, как в уроках: размытие поверх холста, который перерисовывается каждый кадр, тяжело для телефона */
+  .card { background: var(--card); border-radius: 28px; padding: 28px 24px; box-shadow: var(--card-shadow), inset 0 0 0 1px var(--card-line);
+    animation: rise .5s both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(12px); } }
+  @media (prefers-reduced-motion: reduce) { .card { animation: none; } }
+  .question { font-size: 21px; font-weight: 600; line-height: 1.3; margin: 0 0 20px; }
   .muted { color: var(--muted); font-size: 15px; }
-  h1 { font-size: 24px; line-height: 1.25; margin: 0 0 8px; }
-  h2 { font-size: 20px; line-height: 1.3; margin: 8px 0 16px; }
-  button { font: inherit; width: 100%; text-align: left; padding: 14px 16px; margin: 0 0 10px;
-    border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--text); cursor: pointer; }
-  button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-  button:disabled { cursor: default; }
-  button.right { border-color: var(--ok); box-shadow: inset 4px 0 var(--ok); }
-  button.wrong { border-color: var(--bad); box-shadow: inset 4px 0 var(--bad); }
-  .primary { background: var(--accent); border-color: var(--accent); color: #fff; text-align: center; font-weight: 600; margin-top: 8px; }
-  .verdict { font-weight: 700; margin: 8px 0 4px; }
-  .verdict.ok { color: var(--ok); } .verdict.no { color: var(--bad); }
-  a { color: var(--accent); }
-  .score { font-size: 48px; font-weight: 700; margin: 8px 0; }
+  button { font: 500 17px/1.35 var(--text); width: 100%; text-align: left; padding: 16px 20px; margin: 0 0 12px;
+    border: none; border-radius: 20px; background: var(--surface); color: var(--ink); cursor: pointer;
+    transition: background-color var(--t), box-shadow var(--t), opacity var(--t), transform .2s; }
+  button:hover:not(:disabled) { background: rgba(255, 255, 255, .14); }
+  button:focus-visible { outline: 3px solid var(--blue-ink); outline-offset: 2px; }
+  button:disabled { cursor: default; opacity: .5; }
+  button.right, button.wrong { opacity: 1; }
+  button.right { background: var(--blue); color: #fff; }
+  button.wrong { background: var(--bad-soft); box-shadow: 0 0 0 3px var(--bad); }
+  .primary { background: var(--blue); color: #fff; border-radius: 999px; text-align: center; font-weight: 600; padding: 15px 32px; margin: 16px 0 0; }
+  .primary:hover:not(:disabled) { background: var(--blue); transform: scale(.98); }
+  .verdict { font-family: var(--head); font-weight: 600; text-transform: uppercase; font-size: 20px; line-height: 1.2; margin: 12px 0 8px; }
+  .verdict.ok { color: var(--blue-ink); } .verdict.no { color: var(--bad-ink); }
+  .verdict span { display: block; font: 600 17px/1.4 var(--text); text-transform: none; color: var(--ink); margin-top: 6px; }
+  a { color: var(--blue-ink); font-weight: 600; }
+  .score { font-family: var(--head); font-weight: 600; font-size: 56px; line-height: 1; color: var(--blue-ink); margin: 0 0 16px; }
 </style>
 </head>
 <body>
-<main>
-  <div class="card" id="app" aria-live="polite"></div>
+<main aria-live="polite">
+  <h1 class="title" id="title"></h1>
+  <div class="card" id="app"></div>
 </main>
+<script src="field.js"></script>
 <script>
 // ponytail: факты только из context/architecture/03-данные/пул-фактов.md, тексты здесь же, без отдельного файла
 const ENC = "https://encspb.ru/object/2855745571";
@@ -104,6 +121,7 @@ QUESTIONS.forEach((x, i) => console.assert(
   "Вопрос " + (i + 1) + " собран неверно"));
 
 const app = document.getElementById("app");
+const title = document.getElementById("title");
 let i = 0, score = 0;
 
 function el(tag, attrs = {}, text = "") {
@@ -114,8 +132,8 @@ function el(tag, attrs = {}, text = "") {
 
 function start() {
   i = 0; score = 0;
+  title.textContent = "Водонапорная башня на Шпалерной, 56";
   app.replaceChildren(
-    el("h1", {}, "Водонапорная башня на Шпалерной, 56"),
     el("p", {}, `${QUESTIONS.length} вопросов об этой башне, примерно на 2–3 минуты. После каждого ответа покажем, откуда известен факт.`),
     Object.assign(el("button", { className: "primary" }, "Начать"), { onclick: show }),
   );
@@ -125,9 +143,9 @@ function show() {
   const x = QUESTIONS[i];
   const buttons = x.options.map((text, k) =>
     Object.assign(el("button", {}, text), { onclick: () => pick(k, buttons) }));
+  title.textContent = `Вопрос ${i + 1} из ${QUESTIONS.length}`;
   app.replaceChildren(
-    el("p", { className: "muted" }, `Вопрос ${i + 1} из ${QUESTIONS.length}`),
-    el("h2", {}, x.q),
+    el("p", { className: "question" }, x.q),
     ...buttons,
   );
   buttons[0].focus();
@@ -147,9 +165,11 @@ function pick(k, buttons) {
   const last = i === QUESTIONS.length - 1;
   const next = Object.assign(el("button", { className: "primary" }, last ? "Узнать результат" : "Дальше"),
     { onclick: () => { i++; last ? finish() : show(); } });
+  const verdict = el("p", { className: "verdict " + (right ? "ok" : "no") }, right ? "Верно" : "Неверно");
+  Field.pulse(undefined, undefined, right ? 6 : 3);
+  if (!right) verdict.append(el("span", {}, "Правильный ответ: " + x.options[x.answer]));
   app.append(
-    el("p", { className: "verdict " + (right ? "ok" : "no") },
-      right ? "Верно" : "Неверно. Правильный ответ: " + x.options[x.answer]),
+    verdict,
     el("p", {}, x.note),
     src,
     next,
@@ -159,8 +179,8 @@ function pick(k, buttons) {
 
 function finish() {
   const again = Object.assign(el("button", { className: "primary" }, "Пройти ещё раз"), { onclick: start });
+  title.textContent = "Результат";
   app.replaceChildren(
-    el("h1", {}, "Результат"),
     el("p", { className: "score" }, `${score} из ${QUESTIONS.length}`),
     el("p", { className: "muted" }, "Факты взяты из Энциклопедии Санкт-Петербурга и журнала «Зодчий» 1878 года."),
     again,
@@ -168,6 +188,8 @@ function finish() {
   again.focus();
 }
 
+Field.mount(document.body);
+Field.mode("dark");
 start();
 </script>
 </body>
